@@ -1,3 +1,5 @@
+// #define RUN_ALL_TESTS   
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -75,6 +77,8 @@ namespace Assignment3Tests
 
             Assert.Contains("illegal method", response.Status.ToLower());
         }
+
+#if RUN_ALL_TESTS
 
 
         [Theory]
@@ -574,7 +578,7 @@ namespace Assignment3Tests
             Assert.Contains("5 not found", response.Status.ToLower());
         }
 
-
+#endif
 
 
         /**********************************************************

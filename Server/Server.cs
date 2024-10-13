@@ -28,8 +28,8 @@ public class Server
         {
             var client = server.AcceptTcpClient();
             Console.WriteLine("Client connected!!!");
-            HandleClient(client);
 
+            Task.Run(() => HandleClient(client));
            
 
         }
@@ -45,12 +45,31 @@ public class Server
 
             Console.WriteLine("Message from client: " + msg);
 
-            if( msg == "{}" )
+            if (msg == "{}")
             {
                 var response = new Response { Status = "missing method" };
 
                 var json = ToJson(response);
                 WriteToStream(stream, json);
+            }
+            else
+            {
+                var request = FromJson(msg);
+
+                if (request == null)
+                {
+
+                }
+
+                string[] validMethods = ["create", "read", "update", "delete", "echo"];
+
+                if (!validMethods.Contains(request.Method))
+                {
+                    var response = new Response { Status = "illegal method" };
+
+                    var json = ToJson(response);
+                    WriteToStream(stream, json);
+                }
             }
 
         }
