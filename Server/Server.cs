@@ -89,7 +89,6 @@ public class Server
                         }
                         else
                         {
-                            Console.WriteLine("Performing operation" + request.Method);
                             var response = PerformCategoryOperation(request);
 
                             var json = ToJson(response);
@@ -148,7 +147,6 @@ public class Server
                 return new Response { Status = "5 not found" };
 
             case "create":
-                Console.WriteLine("Create" + request.Body);
 
                 string? newCategoryName = CategoryFromJson(request.Body)?.Name;
 
