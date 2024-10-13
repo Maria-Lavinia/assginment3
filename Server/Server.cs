@@ -3,6 +3,7 @@ using System.Net.Sockets;
 using System.Net;
 using System.Text;
 using System;
+using System.Text.Json;
 
 public class Server
 {
@@ -27,20 +28,33 @@ public class Server
         {
             var client = server.AcceptTcpClient();
             Console.WriteLine("Client connected!!!");
+            HandleClient(client);
 
-            try
-            {
-                var stream = client.GetStream();
-                string msg = ReadFromStream(stream);
-                
-                Console.WriteLine("Message from client: " + msg);
-
-                WriteToStream(stream, msg.ToUpper());
-            }
-            catch { }
+           
 
         }
 
+    }
+
+    private void HandleClient(TcpClient client)
+    {
+        try
+        {
+            var stream = client.GetStream();
+            string msg = ReadFromStream(stream);
+
+            Console.WriteLine("Message from client: " + msg);
+
+            if( msg == "{}" )
+            {
+                var response = new Response { Status = "missing method" };
+
+                var json = ToJson(response);
+                WriteToStream(stream, json);
+            }
+
+        }
+        catch { }
     }
 
     private string ReadFromStream(NetworkStream stream)
@@ -54,5 +68,15 @@ public class Server
     {
         var buffer = Encoding.UTF8.GetBytes(msg);
         stream.Write(buffer);
+    }
+
+    public static string ToJson(Response response)
+    {
+        return JsonSerializer.Serialize(response, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+    }
+
+    public static Request? FromJson(string element)
+    {
+        return JsonSerializer.Deserialize<Request>(element, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
     }
 }
