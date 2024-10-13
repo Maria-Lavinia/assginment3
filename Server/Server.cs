@@ -13,12 +13,13 @@ public class Server
     {
         _port = port;
 
-        
+
     }
 
 
-    public void Run() { 
- 
+    public void Run()
+    {
+
         var server = new TcpListener(IPAddress.Loopback, _port); // IPv4 127.0.0.1 IPv6 ::1
         server.Start();
 
@@ -30,7 +31,7 @@ public class Server
             Console.WriteLine("Client connected!!!");
 
             Task.Run(() => HandleClient(client));
-           
+
 
         }
 
@@ -56,20 +57,41 @@ public class Server
             {
                 var request = FromJson(msg);
 
+                // null request 
                 if (request == null)
                 {
-
+                    var response = new Response { Status = "illegal request" };
                 }
-
-                string[] validMethods = ["create", "read", "update", "delete", "echo"];
-
-                if (!validMethods.Contains(request.Method))
+                else
                 {
-                    var response = new Response { Status = "illegal method" };
+                    string[] validMethods = ["create", "read", "update", "delete", "echo"];
 
-                    var json = ToJson(response);
-                    WriteToStream(stream, json);
+                    // invalid method
+                    if (!validMethods.Contains(request.Method))
+                    {
+                        var response = new Response { Status = "illegal method" };
+
+                        var json = ToJson(response);
+                        WriteToStream(stream, json);
+                    }
+                    else
+                    {
+
+                        // missing resourcecs
+                        if (request.Path == null)
+
+
+                        {
+                            var response = new Response { Status = "missing resources" };
+
+                            var json = ToJson(response);
+                            WriteToStream(stream, json);
+                        }
+
+                    }
                 }
+
+
             }
 
         }

@@ -1,4 +1,5 @@
-// #define RUN_ALL_TESTS   
+// 
+#define RUN_ALL_TESTS   
 
 using System;
 using System.Collections.Generic;
@@ -78,8 +79,6 @@ namespace Assignment3Tests
             Assert.Contains("illegal method", response.Status.ToLower());
         }
 
-#if RUN_ALL_TESTS
-
 
         [Theory]
         [InlineData("create")]
@@ -104,6 +103,9 @@ namespace Assignment3Tests
         }
 
         /* Date Tests    */
+
+
+#if RUN_ALL_TESTS
 
         [Fact]
         public void Constraint_RequestWithoutDate_MissingDateError()
@@ -643,7 +645,7 @@ namespace Assignment3Tests
                 var responseData = Encoding.UTF8.GetString(memStream.ToArray());
                 //return JsonSerializer.Deserialize<Response>(responseData);
                 // if the naming policy is used you need to do the same on the server side
-                return JsonSerializer.Deserialize<Response>(responseData, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase});
+                return JsonSerializer.Deserialize<Response>(responseData, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
             }
         }
     }
