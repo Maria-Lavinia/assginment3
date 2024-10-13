@@ -89,6 +89,7 @@ public class Server
                         }
                         else
                         {
+                            Console.WriteLine("Performing operation" + request.Method);
                             var response = PerformCategoryOperation(request);
 
                             var json = ToJson(response);
@@ -109,10 +110,9 @@ public class Server
 
     private Response PerformCategoryOperation(Request request)
     {
-        Response response = new Response();
-        string pathId = request.Path.Split("/")[3];
-        int pathIdInt = int.Parse(pathId);
 
+        Response response = new Response();
+        string pathId = request.Path.Split("/").ElementAtOrDefault(3) ?? string.Empty;
 
         switch (request.Method.ToLower())
         {
@@ -126,7 +126,7 @@ public class Server
                 }
                 else
                 {
-                    Category? fetchedCategory = _categoryList.ReadCategory(pathIdInt);
+                    Category? fetchedCategory = _categoryList.ReadCategory(int.Parse(pathId));
 
                     if (fetchedCategory == null)
                     {
@@ -138,7 +138,7 @@ public class Server
                 }
             case "update":
                 Category? convertedCategory = CategoryFromJson(request.Body);
-                if (convertedCategory != null && convertedCategory.Cid == pathIdInt)
+                if (convertedCategory != null && convertedCategory.Cid == int.Parse(pathId))
                 {
                     _categoryList.UpdateCategory(convertedCategory);
                     response = new Response { Status = "3 updated" };
@@ -146,6 +146,41 @@ public class Server
                 }
 
                 return new Response { Status = "5 not found" };
+
+            case "create":
+                Console.WriteLine("Create" + request.Body);
+
+                string? newCategoryName = CategoryFromJson(request.Body)?.Name;
+
+                if (!string.IsNullOrEmpty(newCategoryName))
+                {
+                    Category? newCategory = _categoryList.CreateCategory(newCategoryName!);
+
+                    if (newCategory == null)
+                    {
+                        response = new Response { Status = "4 Bad Request" };
+                        return response;
+                    }
+
+                    response = new Response { Status = "2 created", Body = CategoryToJson(newCategory) };
+                    return response;
+                }
+
+                return new Response { Status = "5 not found" };
+            case "delete":
+                Category? deletedCategory = _categoryList.DeleteCategory(int.Parse(pathId));
+                if (deletedCategory == null)
+                {
+                    response = new Response { Status = "5 not found" };
+                }
+                else
+                {
+                    response = new Response { Status = "1 Ok" };
+                }
+
+                return response;
+
+
 
 
             default:
@@ -191,6 +226,7 @@ public class Server
     {
         return JsonSerializer.Deserialize<Category>(element, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
     }
+
 
     public static Category[] CategoryArrayFromJson(string element)
     {

@@ -7,15 +7,17 @@ public class CategoryList
         new Category { Cid = 3, Name = "Confections" }
     };
 
-    public void CreateCategory(Category category)
+    public Category? CreateCategory(string categoryName)
     {
-        if (categories.Exists(c => c.Cid == category.Cid))
+        if (categories.Exists(c => c.Name == categoryName))
         {
 
-            return;
+            return null;
         }
 
-        categories.Add(category);
+        Category newCategory = new Category { Cid = categories.Count + 1, Name = categoryName };
+        categories.Add(newCategory);
+        return newCategory;
 
     }
 
