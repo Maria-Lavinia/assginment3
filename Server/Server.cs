@@ -9,6 +9,8 @@ public class Server
 {
     private readonly int _port;
 
+    private CategoryList _categoryList = new CategoryList();
+
     public Server(int port)
     {
         _port = port;
@@ -79,13 +81,20 @@ public class Server
 
                         // missing resourcecs
                         if (request.Path == null)
-
-
                         {
                             var response = new Response { Status = "missing resources" };
 
                             var json = ToJson(response);
                             WriteToStream(stream, json);
+                        }
+                        else
+                        {
+                            var response = PerformCategoryOperation(request);
+
+                            var json = ToJson(response);
+                            WriteToStream(stream, json);
+
+
                         }
 
                     }
@@ -96,6 +105,53 @@ public class Server
 
         }
         catch { }
+    }
+
+    private Response PerformCategoryOperation(Request request)
+    {
+        Response response = new Response();
+        string pathId = request.Path.Split("/")[3];
+        int pathIdInt = int.Parse(pathId);
+
+
+        switch (request.Method.ToLower())
+        {
+            case "read":
+
+                if (pathId == null)
+                {
+                    Category[] fetchedCategories = _categoryList.ListCategories();
+                    response = new Response { Status = "1 Ok", Body = CategoryArrayToJson(fetchedCategories) };
+                    return response;
+                }
+                else
+                {
+                    Category? fetchedCategory = _categoryList.ReadCategory(pathIdInt);
+
+                    if (fetchedCategory == null)
+                    {
+                        response = new Response { Status = "5 not found" };
+                        return response;
+                    }
+                    response = new Response { Status = "1 Ok", Body = CategoryToJson(fetchedCategory) };
+                    return response;
+                }
+            case "update":
+                Category? convertedCategory = CategoryFromJson(request.Body);
+                if (convertedCategory != null && convertedCategory.Cid == pathIdInt)
+                {
+                    _categoryList.UpdateCategory(convertedCategory);
+                    response = new Response { Status = "3 updated" };
+                    return response;
+                }
+
+                return new Response { Status = "5 not found" };
+
+
+            default:
+                return new Response { Status = "illegal method" };
+
+        };
     }
 
     private string ReadFromStream(NetworkStream stream)
@@ -120,4 +176,26 @@ public class Server
     {
         return JsonSerializer.Deserialize<Request>(element, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
     }
+
+    public static string CategoryToJson(Category category)
+    {
+        return JsonSerializer.Serialize(category, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+    }
+
+    public static string CategoryArrayToJson(Category[] categories)
+    {
+        return JsonSerializer.Serialize(categories, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+    }
+
+    public static Category? CategoryFromJson(string element)
+    {
+        return JsonSerializer.Deserialize<Category>(element, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+    }
+
+    public static Category[] CategoryArrayFromJson(string element)
+    {
+        return JsonSerializer.Deserialize<Category[]>(element, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }) ?? Array.Empty<Category>();
+    }
+
+
 }

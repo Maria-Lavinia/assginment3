@@ -1,4 +1,3 @@
-// 
 #define RUN_ALL_TESTS   
 
 using System;
@@ -15,6 +14,7 @@ namespace Assignment3Tests
 {
 
     public class Response
+
     {
         public string Status { get; set; }
         public string Body { get; set; }
