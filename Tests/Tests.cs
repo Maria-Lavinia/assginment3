@@ -112,7 +112,13 @@ namespace Assignment3Tests
         {
             var client = Connect();
 
-            client.SendRequest("{}");
+            var request = new
+            {
+                Method = "echo",
+            };
+            // We changed the test because it is the same as Constraint_RequestWithoutMethod_MissingMethodError
+
+            client.SendRequest(request.ToJson());
 
             var response = client.ReadResponse();
 

@@ -66,6 +66,15 @@ public class Server
                 }
                 else
                 {
+
+                    if (request.Date == null)
+                    {
+
+                        var response = new Response { Status = "missing date" };
+                        var json = ToJson(response);
+                        WriteToStream(stream, json);  // Send response to client
+                    }
+
                     string[] validMethods = ["create", "read", "update", "delete", "echo"];
 
                     // invalid method
@@ -80,12 +89,28 @@ public class Server
                     {
 
                         // missing resourcecs
-                        if (request.Path == null)
+                        if (request.Path == null && request.Method != "echo") // !This method does not take any path
+
                         {
                             var response = new Response { Status = "missing resources" };
 
                             var json = ToJson(response);
                             WriteToStream(stream, json);
+                        }
+                        else if (!(request?.Path?.StartsWith("/api/categories") ?? false))
+                        {
+                            var response = new Response { Status = "4 Bad Request" };
+                            var json = ToJson(response);
+                            WriteToStream(stream, json);
+                        }
+
+
+                        else if (!int.TryParse(request.Date, out int requestDate))
+                        {
+                            var response = new Response { Status = "illegal date" };
+
+                            var json = ToJson(response);
+                            WriteToStream(stream, json);  // Send response to client
                         }
                         else
                         {
@@ -111,10 +136,28 @@ public class Server
     {
 
         Response response = new Response();
-        string pathId = request.Path.Split("/").ElementAtOrDefault(3) ?? string.Empty;
+
+        string? pathId = request.Path?.Split("/").ElementAtOrDefault(3) ?? null;
+        if (pathId != null && !int.TryParse(pathId, out _)){
+                    return new Response { Status = "4 Bad Request" };          
+        }   
+
+        // Output is not relevant 
+        // if path is not null && path is not a number, return 4 Bad Request  
 
         switch (request.Method.ToLower())
         {
+            case "echo":
+      
+                if (request.Body == null)
+                {
+                    return new Response { Status = "missing body" };
+                }
+                else
+        {
+                    return new Response { Status = "1 Ok", Body = request.Body };
+                }
+
             case "read":
 
                 if (pathId == null)
@@ -135,18 +178,36 @@ public class Server
                     response = new Response { Status = "1 Ok", Body = CategoryToJson(fetchedCategory) };
                     return response;
                 }
+
             case "update":
+                if (request.Body == null)
+                {
+                    return new Response { Status = "missing body" };
+                }
+                else if (IsJson(request.Body) == false)
+                {
+                    return new Response { Status = "illegal body" };
+                }
+                else if (int.TryParse(pathId, out int deleteId) == false)
+                {
+                    return new Response { Status = "4 Bad Request" };
+                }
                 Category? convertedCategory = CategoryFromJson(request.Body);
+
                 if (convertedCategory != null && convertedCategory.Cid == int.Parse(pathId))
                 {
                     _categoryList.UpdateCategory(convertedCategory);
                     response = new Response { Status = "3 updated" };
                     return response;
                 }
-
-                return new Response { Status = "5 not found" };
+                return new Response { Status = "4 Bad Request" };
 
             case "create":
+                if (request.Body == null)
+                {
+                    return new Response { Status = "missing body" };
+                }
+
 
                 string? newCategoryName = CategoryFromJson(request.Body)?.Name;
 
@@ -164,13 +225,20 @@ public class Server
                     return response;
                 }
 
-                return new Response { Status = "5 not found" };
+                return new Response { Status = "4 Bad Request" };
             case "delete":
+
+                if (int.TryParse(pathId, out int id) == false)
+                {
+                    return new Response { Status = "4 Bad Request" };
+                }
+
                 Category? deletedCategory = _categoryList.DeleteCategory(int.Parse(pathId));
                 if (deletedCategory == null)
                 {
                     response = new Response { Status = "5 not found" };
                 }
+
                 else
                 {
                     response = new Response { Status = "1 Ok" };
@@ -210,6 +278,20 @@ public class Server
         return JsonSerializer.Deserialize<Request>(element, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
     }
 
+
+    public static bool? IsJson(string element)
+    {
+        try
+        {
+            JsonSerializer.Deserialize<JsonElement>(element);
+            return true;
+        }
+        catch (JsonException)
+        {
+            return false;
+
+        }
+    }
     public static string CategoryToJson(Category category)
     {
         return JsonSerializer.Serialize(category, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
